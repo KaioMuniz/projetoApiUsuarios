@@ -1,16 +1,33 @@
 services:
 
-  mysql:
-    image: mysql:8.0
-    container_name: mysql_apiusuarios
+  usuariosapi:
+    container_name: app_apiusuarios
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
-      - "3309:3306"
-    environment:
-      MYSQL_ROOT_PASSWORD: coti
-      MYSQL_DATABASE: bd_apiusuarios
-    volumes:
-      - mysql_data:/var/lib/mysql
+      - "8081:8081"
+    networks:
+      - apiusuarios-network
+    depends_on:
+      - postgresql
+      - rabbitmq
+      - mailhog
+
+  postgresql:
+    image: postgres:16
+    container_name: postgresql_apiusuarios
     restart: always
+    ports:
+       - "5439:5432"
+    environment:
+      POSTGRES_DB: bd_apiusuarios
+      POSTGRES_USER: user_apiusuarios
+      POSTGRES_PASSWORD: pass_apiusuarios
+    volumes:
+      - apiusuarios-data:/var/lib/postgresql/data
+    networks:
+      - apiusuarios-network
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -22,6 +39,8 @@ services:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
     restart: always
+    networks:
+      - apiusuarios-network
 
   mailhog:
     image: mailhog/mailhog
@@ -30,6 +49,12 @@ services:
       - "8025:8025"      # Web UI
       - "1025:1025"      # SMTP
     restart: always
+    networks:
+      - apiusuarios-network
 
 volumes:
-  mysql_data:
+  apiusuarios-data:
+
+networks:
+  apiusuarios-network:
+     driver: bridge
